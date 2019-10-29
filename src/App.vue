@@ -12,6 +12,9 @@ export default {
 </script>
 
 <style>
+html,body,#app{
+  min-height: 100vh;
+}
 .liner-color{
   background-image: linear-gradient(150deg, rgb(252, 40, 10) 0%, rgb(252, 40, 10) 70%, rgb(254,157,45) 100%)
 }

@@ -10,7 +10,7 @@
         <b-form-group label="校区" label-for="input-1">
           <b-form-select
             id="input-1"
-            v-model="form.food"
+            v-model="form.areas"
             :options="areas"
             required
           ></b-form-select>
@@ -82,7 +82,11 @@
         <span></span>
         <span></span>
       </div>
-    </div> 
+    </div>
+    <b-modal centered id="modal-done" size="sm" title="提示">
+      提交成功，客服人员将在24小时内与您联系。
+      <b-button slot="modal-footer" pill class="submit-buttom liner-color border-0" variant="danger" @click="back">返回</b-button>
+    </b-modal>
   </div>
 </template>
 
@@ -91,46 +95,42 @@ export default {
   name: 'form',
   data() {
     return {
-      areas:[
-        { 
-          text: '未知',
-          value: 0
-        },
-        { 
-          text: '校区1',
-          value: 1
-        },
-        { 
-          text: '校区2',
-          value: 2
-        },
-      ],
-      times:[
-        { 
-          text: '上午',
-          value: 1
-        },
-        { 
-          text: '下午',
-          value: 2
-        },
-        { 
-          text: '晚上',
-          value: 3
-        },
-      ],
+      schools: [],
+      areas: [],
+      // times:,
       form:{},
       phoneCk: null,
-      isLoading: false
+      isLoading: true,
+      doneInfo: null
     }
+  },
+  created(){
+    this.axios.get('/api/info/school_info/').then(({data})=>{
+      this.isLoading = false
+      this.schools = data
+      this.areas = data.map(i=>{
+        return{
+          text: i.school_name,
+          value: i.id
+        }
+      })
+    })
   },
   methods:{
     onSubmit(evt){
       evt.preventDefault()
       console.log(JSON.stringify(this.form))
       this.isLoading = true
+
+      this.axios.post('/api/info/user_login_info/', {
+        open_id:''
+      }).then(({data})=>{
+
+      })
+
       setTimeout(() => {
-        this.$router.replace('/')
+        this.$bvModal.show('modal-done')
+        // this.$router.replace('/')
       }, 1200);
     },
     isPhoneOk(e){
@@ -144,6 +144,34 @@ export default {
       if(e.length==11){
         this.phoneCk = true
       }
+    },
+    back(){
+      this.$router.replace({path:'/',query: this.doneInfoQuery})
+    }
+  },
+  computed:{
+    times(){
+      let re = this.schools[0] && this.schools.find(i=>i.id==this.form.areas)
+      if(re && re.study_time && re.study_time[0]){
+        re = re.study_time.map(i=>{
+          return{
+            text: i.time,
+            value: i.id
+          }
+        })
+      }else if(re && re.study_time && !re.study_time[0]){
+        re = [{
+          text:'暂无可用时段，请选择其他校区',
+          value: null
+        }]
+      } else{
+        re = [{
+          text:'请先选择学校',
+          value: null
+        }]
+      }
+      console.log(re)
+      return re
     }
   }
 }
