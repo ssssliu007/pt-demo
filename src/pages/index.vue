@@ -42,7 +42,7 @@
           <b-col v-if="isShowJoin" cols="12" class="join-btn liner-color" @click="btnClick('join')">
             点击参团
           </b-col>
-          <b-col v-if="isShowCreat" cols="12" class="join-btn liner-color" @click="btnClick('creat')">
+          <b-col v-if="isShowCreate" cols="12" class="join-btn liner-color" @click="btnClick('create')">
             点击开团
           </b-col>
         </b-row>
@@ -80,11 +80,11 @@ export default {
       groupId: 0,
       preText: '加载中 ...',
       isShowJoin: false,
-      isShowCreat: false
+      isShowCreate: false
     }
   },
   created(){
-    this.userId = this.$route.query.user;
+    // this.userId = this.$route.query.user;
     this.groupId = this.$route.query.group;
     this.initUserInfo().then(()=>{
       return this.initGroup()
@@ -93,8 +93,20 @@ export default {
     })
   },
   methods:{
-    btnClick(){
-      this.$router.push('/form/')
+    btnClick(typeName){
+      let type = 1;
+      if(typeName=='join'){
+        type = 3
+      }else if(typeName=='create'){
+        type = 2
+      }
+      this.$router.push({
+        path:'/form/',
+        query:{
+          group: this.groupId || '',
+          type
+        }
+      })
     },
     initGroup(id=this.groupId, isError){
       // this.axios.get('/')
@@ -119,9 +131,9 @@ export default {
         this.initGroup(null, true)
       })
     },
-    initUserInfo(id = this.userId){
-      return this.axios.get('/api/info/user_login_info/',{
-        params:{id}
+    initUserInfo(){
+      return this.axios.get('/api/info/user_login_info/').then(({data})=>{
+        this.userId = data
       })
     },
     initBtns(){
@@ -138,7 +150,7 @@ export default {
         return hasHost && hasEmpty && !hasU
       });
       this.isShowJoin = hasHost && hasEmpty
-      this.isShowCreat = isEmpty || hasU
+      this.isShowCreate = isEmpty || hasU
     }
   }
 }

@@ -122,15 +122,22 @@ export default {
       console.log(JSON.stringify(this.form))
       this.isLoading = true
 
-      this.axios.post('/api/info/user_login_info/', {
-        open_id:''
+      this.axios.post('/api/info/fill_information/', {
+        type: this.$route.query.type,
+        group: this.$route.query.group,
+        school: this.form.areas,
+        name: this.form.name,
+        grade: this.form.level,
+        phone: this.form.phone,
+        study_time: this.form.time
       }).then(({data})=>{
-
+        this.doneInfoQuery = {
+          group: data.group,
+        }
       })
 
       setTimeout(() => {
         this.$bvModal.show('modal-done')
-        // this.$router.replace('/')
       }, 1200);
     },
     isPhoneOk(e){
