@@ -99,7 +99,7 @@ export default {
     }
   },
   created(){
-    this.userId = this.$route.query.user;
+    this.userId = this.$route.query.open_id;
     this.hostId = this.$route.query.host;
     if(this.hostId === 'isuser' || !this.hostId){
       this.hostId = this.userId
@@ -157,21 +157,31 @@ export default {
       }
       console.log(promise)
       return promise.then(({data})=>{
-        console.log(data.member.list.length)
-        this.groupId =data.id
-        data.member.need = data.member.maxNo - data.member.list.length
-        if(data.member.list.length>0){
-          for(let k=data.member.list.length; k<data.member.maxNo; k++){
-            console.log(k)
-            data.member.list.push({
-              username: "待邀请",
-              isNone: true
-            })
+        if(!data.member){
+          data.member = {
+            maxNo: 5,
+            list:[]
           }
         }
+        this.groupId =data.id
+        if (data.member){
+          data.member.need = data.member.maxNo - data.member.list.length
+          if(data.member.list.length>0){
+              if(data.member.list[0].open_id == this.userId){
+              this.isOwnedGroup = true
+            }
+            for(let k=data.member.list.length; k<data.member.maxNo; k++){
+              console.log(k)
+              data.member.list.push({
+                username: "待邀请",
+                isNone: true
+              })
+            }
+          }
         this.memberInfo = data.member
         this.item = data.item
         this.info = data.item.index_img
+        }
       }).catch((e)=>{
         console.log(e)
         // this.initGroup(null, true)
@@ -191,12 +201,12 @@ export default {
         // this.$router.push(url)
         // window.history.pushState(url)
       }
-      // let url = '/dapi/info/test/'
+      if(id == this.hostId){
+        this.isOwnedGroup = true
+      }
+
+      // let url = '/dapi/info/user_login_info/'
       // return this.axios.get(url).then(({data})=>{
-      //   this.userData = data
-      //   if(data && data.isHost && data.open_id == id){
-      //     this.isOwnedGroup = true
-      //   }
       // }).catch((e)=>{
       //   this.userData = {
       //     "icon": "http://192.168.0.119:8000/media/user/logo/2019/10/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20191030173649.png",
