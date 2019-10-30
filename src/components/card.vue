@@ -5,7 +5,19 @@
     </b-col>
     <b-col cols="8 pr-0 pl-2" class="card-right-box">
       <h4 class="fv-card-header">{{header}}</h4>
-      <b-row no-gutters class="mt-auto" align-v="end">
+        <b-row class="member-info mt-auto" v-if="memberInfo">
+          <b-col v-if="memberInfo.maxNo != memberInfo.need">
+            <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
+            <span>人成团，还差</span>
+            <span class="text-danger">{{memberInfo.need || 0}}</span>
+            <span>人</span>
+          </b-col>
+          <b-col v-else>
+            <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
+            <span>人成团。</span>
+          </b-col>
+        </b-row>
+      <!-- <b-row no-gutters class="mt-auto" align-v="end">
         <div class="prc text-danger">
           <span>￥</span>
           <span class="prc-bigger">{{priceNShow[0]}}</span>
@@ -15,7 +27,7 @@
           <span>￥</span>
           <span>{{priceO||'00.00'}}</span>
         </div>
-      </b-row>
+      </b-row> -->
     </b-col>
   </b-row>
 </template>
@@ -28,6 +40,7 @@ export default {
     img: String,
     priceN: String,
     priceO: String,
+    memberInfo: Object
   },
   methods:{
   },

@@ -1,12 +1,12 @@
 <template>
   <div class="index">
     <div v-if="item">
-      <div class="toper">
+      <div class="toper" :style="{backgroundImage:schools[0] && `url(${schools[0].logo})`}">
         <h4 class="text-white text-center pt-5">{{header}}</h4>
-        <fv-card class="item-top" :img="item.img" :header="item.name"></fv-card>
+        <fv-card class="item-top" :img="item.index_logo" :header="item.index_name" :memberInfo="memberInfo"></fv-card>
       </div>
       <b-container class="member-box">
-        <b-row class="member-info">
+        <!-- <b-row class="member-info">
           <b-col v-if="memberInfo.maxNo != memberInfo.need">
             <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
             <span>人成团，还差</span>
@@ -17,7 +17,7 @@
             <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
             <span>人成团。</span>
           </b-col>
-        </b-row>
+        </b-row> -->
         <b-row v-if="memberInfo && memberInfo.list[0]" class="member-list mt-3" align-h="center">
           <b-col
             v-for="(m, mno) in memberInfo.list"
@@ -34,7 +34,7 @@
               <div class="member-icon-host liner-color">团长</div>
             </div>
             <div class="member-name">
-              {{m.name}}
+              {{m.username}}
             </div>
           </b-col>
         </b-row>
@@ -48,17 +48,27 @@
         </b-row>
         <b-row no-gutters class="btm-footer">
           <b-col cols="12" class="info-box">
-            <h6>规则说明</h6>
-            <p v-html="info"></p>
+            <!-- <h6>规则说明</h6>
+            <p v-html="info"></p> -->
+            <img width="100%" :src="info" alt="">
           </b-col>
         </b-row>
       </b-container>
     </div>
-    <div class="text-info text-center pt-5" v-else>
+    <!-- <div class="text-info text-center pt-5">
       {{preText}}
+    </div> -->
+    <div class="pageCover" v-else>
+      <div id="preloader_1" class="m-auto">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
     <p class="no-info text-center">
-      FooterStart CopyRight 2019©feiyang FooterEnd
+      Footerstart CopyRight 2019©feiYang footerenD
     </p>
   </div>
 </template>
@@ -72,68 +82,113 @@ export default {
   },
   data() {
     return {
-      header: '拼团标题 & LOGO',
+      header: '',
       item: false,
       memberInfo: false,
       info: '',
       userId: 0,
-      groupId: 0,
+      hostId: 0,
       preText: '加载中 ...',
       isShowJoin: false,
-      isShowCreate: false
+      isShowCreate: false,
+      schools:[],
+      isOwnedGroup: false,
+      userData: false,
+      groupId:0
     }
   },
   created(){
-    // this.userId = this.$route.query.user;
-    this.groupId = this.$route.query.group;
+    this.userId = this.$route.query.user;
+    this.hostId = this.$route.query.host;
+    if(this.hostId === 'isuser' || !this.hostId){
+      this.hostId = this.userId
+    }
+
+
     this.initUserInfo().then(()=>{
       return this.initGroup()
+    }).catch(()=>{
+      return this.initGroup()
     }).then(()=>{
-      this.initBtns()
+      return this.initBtns()
     })
+    this.initSchool()
+    // this.initUserInfo().then(()=>{
+    //   return this.initGroup()
+    // }).then(()=>{
+    //   this.initBtns()
+    // })
   },
   methods:{
     btnClick(typeName){
-      let type = 1;
+      let type = 1,
+      group = '';
       if(typeName=='join'){
         type = 3
+        group = this.groupId
       }else if(typeName=='create'){
         type = 2
       }
       this.$router.push({
         path:'/form/',
         query:{
-          group: this.groupId || '',
-          type
+          host: this.hostId || '',
+          type,
+          group
         }
       })
     },
-    initGroup(id=this.groupId, isError){
+    initGroup(id=this.hostId){
       // this.axios.get('/')
       // return this.axios.get('/json/member-info.json').then(({data})=>{
-      let url = isError?'/json/member-info-none.json':'/api/info/group_info/'
-      return this.axios.get(url, {params:{id}}).then(({data})=>{
+      // let url = isError?'/json/member-info-none.json':'/dapi/info/group_info/'
+      let url = '/dapi/info/group_info/'+ id +'/',
+      promise;
+      if(false && id == this.userId){
+        promise = new Promise((a)=>{
+          setTimeout(() => {
+            console.log('ddd')
+            a({data:this.userData})
+          }, 0);
+        })
+      }else{
+        promise = this.axios.get(url)
+      }
+      console.log(promise)
+      return promise.then(({data})=>{
         console.log(data.member.list.length)
+        this.groupId =data.id
         data.member.need = data.member.maxNo - data.member.list.length
         if(data.member.list.length>0){
           for(let k=data.member.list.length; k<data.member.maxNo; k++){
             console.log(k)
             data.member.list.push({
-              name: "待邀请",
+              username: "待邀请",
               isNone: true
             })
           }
         }
         this.memberInfo = data.member
         this.item = data.item
-        this.info = data.info
-      }).catch(()=>{
-        this.initGroup(null, true)
+        this.info = data.item.index_img
+      }).catch((e)=>{
+        console.log(e)
+        // this.initGroup(null, true)
       })
     },
-    initUserInfo(){
-      return this.axios.get('/api/info/user_login_info/').then(({data})=>{
-        this.userId = data
+    initUserInfo(id=this.userId){
+      let url = '/dapi/info/test/'
+      return this.axios.get(url).then(({data})=>{
+        this.userData = data
+        if(data && data.isHost && data.open_id == id){
+          this.isOwnedGroup = true
+        }
+      }).catch((e)=>{
+        this.userData = {
+          "icon": "http://192.168.0.119:8000/media/user/logo/2019/10/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20191030173649.png",
+          "open_id": "o3ybb1Xb6TZ_V-bobiHciUL7oltA",
+          "username": "未見。"
+        }
       })
     },
     initBtns(){
@@ -144,13 +199,27 @@ export default {
       this.memberInfo && this.memberInfo.list.find((i)=>{
         !hasHost && (hasHost = i.isHost)
         !hasEmpty && (hasEmpty = i.isNone)
-        !hasU && (hasU = i.id == this.userId)
+        !hasU && (hasU = i.open_id == this.userId)
         isEmpty && i.isNone
-        // console.log(i)
+        console.log(i.open_id == this.userId)
         return hasHost && hasEmpty && !hasU
       });
-      this.isShowJoin = hasHost && hasEmpty
-      this.isShowCreate = isEmpty || hasU
+      this.isShowJoin = hasHost && hasEmpty && !hasU
+      this.isShowCreate = !this.isOwnedGroup && (isEmpty || hasU)
+    },
+    initSchool(){
+      let url = '/dapi/info/school_info/',
+      schoolId = this.$route.query.school
+      if(schoolId){
+        url+=schoolId+'/'
+      }
+      this.axios.get(url).then(({data})=>{
+        if(schoolId){
+          data = [data]
+        }
+        this.schools = data
+        localStorage.setItem('school_info',JSON.stringify(data))
+      })
     }
   }
 }
@@ -164,7 +233,7 @@ export default {
 }
 .toper{
   height: 30vh;
-  background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%);
+  background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%) top center/cover;
   padding: 0 25px;
   position: relative;
 }
@@ -176,6 +245,7 @@ export default {
 }
 .member-box{
   margin-top: 70px;
+  padding-bottom: 50px;
   .member-info{
     text-align: center;
   }
