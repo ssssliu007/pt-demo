@@ -94,7 +94,8 @@ export default {
       schools:[],
       isOwnedGroup: false,
       userData: false,
-      groupId:0
+      groupId:0,
+      open_id: this.$route.query.open_id,
     }
   },
   created(){
@@ -177,19 +178,32 @@ export default {
       })
     },
     initUserInfo(id=this.userId){
-      let url = '/dapi/info/test/'
-      return this.axios.get(url).then(({data})=>{
-        this.userData = data
-        if(data && data.isHost && data.open_id == id){
-          this.isOwnedGroup = true
-        }
-      }).catch((e)=>{
+      if (this.open_id){
         this.userData = {
-          "icon": "http://192.168.0.119:8000/media/user/logo/2019/10/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20191030173649.png",
-          "open_id": "o3ybb1Xb6TZ_V-bobiHciUL7oltA",
-          "username": "未見。"
+          "icon": this.$route.query.icon,
+          "open_id":this.$route.query.open_id,
+          "username":this.$route.query.username
         }
-      })
+        console.log(this.userData)
+      } else{
+        let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx18a6e8db7f409537&redirect_uri=http%3A%2F%2Fwx.maxiaobei.cn%2Fdapi%2Finfo%2Ftest_1%2F&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect'
+        window.location.href = url
+        // this.$router.push(url)
+        // window.history.pushState(url)
+      }
+      // let url = '/dapi/info/test/'
+      // return this.axios.get(url).then(({data})=>{
+      //   this.userData = data
+      //   if(data && data.isHost && data.open_id == id){
+      //     this.isOwnedGroup = true
+      //   }
+      // }).catch((e)=>{
+      //   this.userData = {
+      //     "icon": "http://192.168.0.119:8000/media/user/logo/2019/10/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20191030173649.png",
+      //     "open_id": "o3ybb1Xb6TZ_V-bobiHciUL7oltA",
+      //     "username": "未見。"
+      //   }
+      // })
     },
     initBtns(){
       let hasHost,
