@@ -1,12 +1,15 @@
 <template>
   <div class="index">
     <div v-if="item">
-      <div class="toper">
+      <div class="toper" :style="{backgroundImage:schools[0] && `url(${schools[0].logo})`}">
         <h4 class="text-white text-center pt-5">{{header}}</h4>
-        <fv-card class="item-top" :img="item.img" :header="item.name"></fv-card>
+      </div>
+      <div class="toper-buffer"></div>
+      <div class="p-2">
+        <fv-card class="item-top" :img="item.index_logo" :header="item.index_name" :memberInfo="memberInfo"></fv-card>
       </div>
       <b-container class="member-box">
-        <b-row class="member-info">
+        <!-- <b-row class="member-info">
           <b-col v-if="memberInfo.maxNo != memberInfo.need">
             <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
             <span>人成团，还差</span>
@@ -17,7 +20,7 @@
             <span class="text-danger">{{memberInfo.maxNo || 0}}</span>
             <span>人成团。</span>
           </b-col>
-        </b-row>
+        </b-row> -->
         <b-row v-if="memberInfo && memberInfo.list[0]" class="member-list mt-3" align-h="center">
           <b-col
             v-for="(m, mno) in memberInfo.list"
@@ -34,7 +37,7 @@
               <div class="member-icon-host liner-color">团长</div>
             </div>
             <div class="member-name">
-              {{m.name}}
+              {{m.username}}
             </div>
           </b-col>
         </b-row>
@@ -42,23 +45,33 @@
           <b-col v-if="isShowJoin" cols="12" class="join-btn liner-color" @click="btnClick('join')">
             点击参团
           </b-col>
-          <b-col v-if="isShowCreat" cols="12" class="join-btn liner-color" @click="btnClick('creat')">
+          <b-col v-if="isShowCreate" cols="12" class="join-btn liner-color" @click="btnClick('create')">
             点击开团
           </b-col>
         </b-row>
         <b-row no-gutters class="btm-footer">
           <b-col cols="12" class="info-box">
-            <h6>规则说明</h6>
-            <p v-html="info"></p>
+            <!-- <h6>规则说明</h6>
+            <p v-html="info"></p> -->
+            <img width="100%" :src="info" alt="">
           </b-col>
         </b-row>
       </b-container>
     </div>
-    <div class="text-info text-center pt-5" v-else>
+    <!-- <div class="text-info text-center pt-5">
       {{preText}}
+    </div> -->
+    <div class="pageCover" v-else>
+      <div id="preloader_1" class="m-auto">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
     <p class="no-info text-center">
-      FooterStart CopyRight 2019©feiyang FooterEnd
+      Footerstart 2019©feiYang footerenD
     </p>
   </div>
 </template>
@@ -72,57 +85,191 @@ export default {
   },
   data() {
     return {
-      header: '拼团标题 & LOGO',
+      header: '',
       item: false,
       memberInfo: false,
       info: '',
       userId: 0,
-      groupId: 0,
+      hostId: 0,
       preText: '加载中 ...',
       isShowJoin: false,
-      isShowCreat: false
+      isShowCreate: false,
+      schools:[],
+      isOwnedGroup: false,
+      userData: false,
+      groupId:0,
+      open_id: this.$route.query.open_id,
     }
   },
   created(){
-    this.userId = this.$route.query.user;
-    this.groupId = this.$route.query.group;
-    this.initUserInfo().then(()=>{
-      return this.initGroup()
-    }).then(()=>{
-      this.initBtns()
+    // this.userId = this.$route.query.open_id;
+    // this.hostId = this.$route.query.host;
+    // if(this.hostId === 'isuser' || !this.hostId){
+    //   this.hostId = this.userId
+    // }
+    // this.userData = this.$route.query
+    this.initUserInfo()
+    this.initGroup().then(()=>{
+      return this.initBtns()
     })
+    this.initSchool()
+    // this.initUserInfo().then(()=>{
+    //   return this.initGroup()
+    // }).then(()=>{
+    //   this.initBtns()
+    // })
   },
   methods:{
-    btnClick(){
-      this.$router.push('/form/')
+    btnClick(typeName){
+      let type = 1,
+      group = '';
+      if(typeName=='join'){
+        type = 3
+        group = this.groupId
+      }else if(typeName=='create'){
+        type = 2
+      }
+      if(this.userData.info_complete == 'true'){
+        let query = JSON.parse(JSON.stringify(this.$route.query))
+        if(typeName=='join'){
+          alert('您已经参加过其他团了，请勿重复加入。')
+        }else if(typeName=='create'){
+          this.axios.post('/dapi/info/fill_information/', {
+            type: 2,
+            open_id: this.userId
+          }).then(()=>{
+            this.$router.replace({
+              path:'/',
+              query: query
+            })
+          })
+        }
+      }else{
+        this.$router.push({
+          path:'/form/',
+          query:{
+            host: this.hostId || '',
+            type,
+            group
+          }
+        })
+      }
     },
-    initGroup(id=this.groupId, isError){
+    initGroup(id=this.hostId || this.userId){
       // this.axios.get('/')
       // return this.axios.get('/json/member-info.json').then(({data})=>{
-      let url = isError?'/json/member-info-none.json':'/api/info/group_info/'
-      return this.axios.get(url, {params:{id}}).then(({data})=>{
-        console.log(data.member.list.length)
-        data.member.need = data.member.maxNo - data.member.list.length
-        if(data.member.list.length>0){
-          for(let k=data.member.list.length; k<data.member.maxNo; k++){
-            console.log(k)
-            data.member.list.push({
-              name: "待邀请",
-              isNone: true
-            })
+      // let url = isError?'/json/member-info-none.json':'/dapi/info/group_info/'
+      let url = '/dapi/info/group_info/'+ id +'/',
+      promise;
+      if(false && id == this.userId){
+        promise = new Promise((a)=>{
+          setTimeout(() => {
+            console.log('ddd')
+            a({data:this.userData})
+          }, 0);
+        })
+      }else{
+        promise = this.axios.get(url)
+      }
+      console.log(promise)
+      return promise.then(({data})=>{
+        if(!data.member){
+          data.member = {
+            maxNo: 5,
+            list:[]
           }
         }
+        this.groupId =data.id
+        if (data.member){
+          data.member.need = data.member.maxNo - data.member.list.length
+          if(data.member.list.length>0){
+            if(data.member.list[0].open_id == this.userId){
+              this.isOwnedGroup = true
+            }
+            for(let k=data.member.list.length; k<data.member.maxNo; k++){
+              console.log(k)
+              data.member.list.push({
+                username: "待邀请",
+                isNone: true
+              })
+            }
+          }
         this.memberInfo = data.member
         this.item = data.item
-        this.info = data.info
-      }).catch(()=>{
-        this.initGroup(null, true)
+        this.info = data.item.index_img
+        }
+      }).catch((e)=>{
+        console.log(e)
+        // this.initGroup(null, true)
       })
     },
-    initUserInfo(id = this.userId){
-      return this.axios.get('/api/info/user_login_info/',{
-        params:{id}
-      })
+    initUserInfo(){
+      let host = this.$cookies.get('hostId')
+      let id;
+      if (host){
+        // this.hostId = id = this.$route.query.open_id
+        if(host =='isNewHere'){
+          this.$cookies.remove('hostId')
+          if(this.$route.query.open_id){
+            this.$cookies.set('userData', JSON.stringify(this.$route.query) )
+          }
+        }else{
+          // this.$cookies.remove('hostId')
+          this.hostId = host
+        }
+        if(this.$route.query.open_id){
+          this.userData = this.$route.query
+        }else{
+          let userData = this.$cookies.get('userData');
+          if(typeof userData == 'string'){
+            userData = decodeURIComponent(userData);
+            userData = JSON.parse(userData);
+          }
+          this.userData = userData.open_id
+        }
+        id = this.userData.open_id
+        this.userId = id
+        console.log(this.userData)
+      } else{
+        let op_id = this.$route.query.open_id
+        if(op_id){
+          this.$cookies.set('hostId', op_id)
+        }else{
+          this.$cookies.set('hostId', 'isNewHere')
+        }
+        let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?' + [
+          ['state', 'STATE'],
+          ['response_type', 'code'],
+          ['scope','snsapi_userinfo'],
+          ['appid', 'wx18a6e8db7f409537'],
+          ['redirect_uri', encodeURIComponent('http://wx.maxiaobei.cn/dapi/info/test_1/')]
+        ].map(i=>i.join('=')).join('&')+'#wechat_redirect'
+        // let url = `https://open.weixin.qq.com/connect/oauth2/authorize?
+        // appid=wx18a6e8db7f409537&
+        // redirect_uri=http%3A%2F%2Fwx.maxiaobei.cn%2Fdapi%2Finfo%2Ftest_1%2F&
+        // response_type=code&
+        // scope=snsapi_userinfo&
+        // state=STATE#wechat_redirect`
+
+        // history.replaceState(null, document.title, url.split('#')[0] + '#');
+        // location.replace('');
+        window.location.href = url
+        // this.$router.push(url)
+        // window.history.pushState(url)
+      }
+      // if(id == this.hostId){
+      //   this.isOwnedGroup = true
+      // }
+
+      // let url = '/dapi/info/user_login_info/'
+      // return this.axios.get(url).then(({data})=>{
+      // }).catch((e)=>{
+      //   this.userData = {
+      //     "icon": "http://192.168.0.119:8000/media/user/logo/2019/10/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20191030173649.png",
+      //     "open_id": "o3ybb1Xb6TZ_V-bobiHciUL7oltA",
+      //     "username": "未見。"
+      //   }
+      // })
     },
     initBtns(){
       let hasHost,
@@ -132,13 +279,27 @@ export default {
       this.memberInfo && this.memberInfo.list.find((i)=>{
         !hasHost && (hasHost = i.isHost)
         !hasEmpty && (hasEmpty = i.isNone)
-        !hasU && (hasU = i.id == this.userId)
+        !hasU && (hasU = i.open_id == this.userId)
         isEmpty && i.isNone
-        // console.log(i)
+        console.log(i.open_id == this.userId)
         return hasHost && hasEmpty && !hasU
       });
-      this.isShowJoin = hasHost && hasEmpty
-      this.isShowCreat = isEmpty || hasU
+      this.isShowJoin = (this.userData.info_complete !='true') && hasHost && hasEmpty && !hasU
+      this.isShowCreate = !this.isOwnedGroup && (isEmpty || hasU)
+    },
+    initSchool(){
+      let url = '/dapi/info/school_info/',
+      schoolId = this.$route.query.school
+      if(schoolId){
+        url+=schoolId+'/'
+      }
+      this.axios.get(url).then(({data})=>{
+        if(schoolId){
+          data = [data]
+        }
+        this.schools = data
+        localStorage.setItem('school_info',JSON.stringify(data))
+      })
     }
   }
 }
@@ -151,19 +312,22 @@ export default {
   position: relative;
 }
 .toper{
-  height: 30vh;
-  background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%);
+  // height: 30vh;
+  height: 80vw;
+  background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%) top center/cover;
   padding: 0 25px;
-  position: relative;
-}
-.item-top{
   position: absolute;
-  bottom: -50px;
-  left: 25px;
-  right: 25px;
+  width: 100%;
+  box-sizing: border-box;
 }
+.toper-buffer{
+  height: 65vw;
+}
+// .item-top{
+// }
 .member-box{
   margin-top: 70px;
+  padding-bottom: 50px;
   .member-info{
     text-align: center;
   }
@@ -209,6 +373,7 @@ export default {
   }
 }
 .member-item.is-none{
+  outline: none;
   .member-icon{
     border: dashed 2px #eeeeee;
   }
@@ -235,6 +400,7 @@ export default {
 }
 .info-box{
   padding: 50px 25px 0px 25px;
+  padding: 50px 0px 0px 0px;
   color: #888;
   line-height: 1.5;
   font-size: 12px;

@@ -18,13 +18,21 @@ module.exports = {
     proxy: {
       // proxy all requests starting with /api to jsonplaceholder
       '/api': {
-        target: 'http://192.168.0.119:8000',   //代理接口
+        // target: 'http://192.168.0.119:8000',   //代理接口
         // target: 'http://192.168.0.135:8000', //代理接口
-        // target: 'http://192.168.0.119:8000',   
+        // target: 'http://192.168.0.119:8000',
+        target: 'http://wx.maxiaobei.cn',   //代理接口
         changeOrigin: true,
         pathRewrite: {
           '^/api': ''    //代理的路径
         }
+      },
+      '/dapi': {
+        // target: 'http://192.168.0.119:8000',   //代理接口
+        target: 'http://wx.maxiaobei.cn',   //代理接口
+        // target: 'http://192.168.0.135:8000', //代理接口
+        // target: 'http://192.168.0.119:8000',
+        changeOrigin: true
       }
     }
 

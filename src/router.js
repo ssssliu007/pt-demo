@@ -6,7 +6,7 @@ import form from '@/pages/form'
 
 Vue.use(Router)
 const router = new Router({
-  mode: 'hash',
+  mode: 'history',
   routes: [
     {
       path: '/',
@@ -18,7 +18,26 @@ const router = new Router({
       name: 'form',
       component: form
     }
-  ]
+  ],
+  beforeEach:((to, from, next)=>{
+    if(to.name == 'index') {
+      let schoolId = to.query.school
+      if(schoolId){
+        this.$cookies.set('schoolId', schoolId)
+        next()
+      }else{
+        let cookiedSchoolId = this.$cookies.get('schoolId')
+        if(cookiedSchoolId){
+          to.query.school = cookiedSchoolId
+          this.$cookies.remove('schoolId')
+          next({
+            path: '/',
+            query: to.query
+          })
+        }
+      }
+    }
+  })
 })
 
 export default router

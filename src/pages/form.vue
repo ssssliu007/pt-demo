@@ -1,6 +1,6 @@
 <template>
   <div class="form">
-    <b-container>
+    <b-container class="pb-5 mb-5">
       <b-row>
         <b-col class="pt-3">
           <h4>填写资料</h4>
@@ -74,7 +74,7 @@
         <b-button type="submit" pill class="submit-buttom liner-color border-0" variant="danger">提交</b-button>
       </b-form>
     </b-container>
-    <div v-show="isLoading" class="cover">
+    <div v-show="isLoading" class="pageCover black">
       <div id="preloader_1" class="m-auto">
         <span></span>
         <span></span>
@@ -84,7 +84,7 @@
       </div>
     </div>
     <b-modal centered id="modal-done" size="sm" title="提示">
-      提交成功，客服人员将在24小时内与您联系。
+      提交成功。
       <b-button slot="modal-footer" pill class="submit-buttom liner-color border-0" variant="danger" @click="back">返回</b-button>
     </b-modal>
   </div>
@@ -100,21 +100,22 @@ export default {
       // times:,
       form:{},
       phoneCk: null,
-      isLoading: true,
+      isLoading: false,
       doneInfo: null
     }
   },
   created(){
-    this.axios.get('/api/info/school_info/').then(({data})=>{
-      this.isLoading = false
-      this.schools = data
-      this.areas = data.map(i=>{
-        return{
-          text: i.school_name,
-          value: i.id
-        }
-      })
-    })
+    try {
+      this.schools = JSON.parse(localStorage.getItem('school_info'))
+      this.areas = this.schools.map(i=>{
+          return{
+            text: i.school_name,
+            value: i.id
+          }
+        })
+    } catch (error) {
+      console.log(error)
+    }
   },
   methods:{
     onSubmit(evt){
@@ -122,15 +123,23 @@ export default {
       console.log(JSON.stringify(this.form))
       this.isLoading = true
 
-      this.axios.post('/api/info/user_login_info/', {
-        open_id:''
+      this.axios.post('/dapi/info/fill_information/', {
+        name: this.form.name,
+        grade: this.form.level,
+        phone: this.form.phone,
+        school: this.form.areas,
+        study_time: this.form.time,
+        type: this.$route.query.type,
+        group: this.$route.query.group,
+        open_id: this.$route.query.host
       }).then(({data})=>{
-
+        this.doneInfoQuery = {
+          group: data.group,
+        }
       })
 
       setTimeout(() => {
         this.$bvModal.show('modal-done')
-        // this.$router.replace('/')
       }, 1200);
     },
     isPhoneOk(e){
@@ -179,15 +188,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss" scoped>
-.cover{
-  position: fixed;
-  display: flex;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, .4);
-}
 .submit-buttom{
   display: block;
   width: 100%;
