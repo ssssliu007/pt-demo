@@ -134,8 +134,7 @@ export default {
       }).then(({data})=>{
         this.doneInfoQuery = {
           host: this.$route.query.host,
-          school: this.$route.query.school,
-          login: true
+          school: this.$route.query.school
         }
         setTimeout(() => {
           this.$bvModal.show('modal-done')

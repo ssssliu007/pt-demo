@@ -117,7 +117,7 @@ export default {
         type = 2
       }
       console.log('this.userInfo.info_complete', this.userInfo.info_complete)
-      if(this.userInfo.info_complete == true){
+      if(this.userInfo.info_complete === true || this.userInfo.info_complete == 'true'){
         let query = JSON.parse(JSON.stringify(this.$route.query))
         if(typeName=='join'){
           alert('您已经参加过其他团了，请勿重复加入。')
@@ -229,7 +229,7 @@ export default {
 
         // history.replaceState(null, document.title, url.split('#')[0] + '#');
         // location.replace('');
-        // window.location.href = url
+        window.location.href = url
         // this.$router.push(url)
         // window.history.pushState(url)
       }
@@ -253,13 +253,13 @@ export default {
       hasU = false,
       isEmpty = true;
       this.memberInfo && this.memberInfo.list.find((i)=>{
-        !isHost && (isHost = i.isHost)
+        !isHost && (isHost = this.userInfo.open_id == i.open_id)
         !hasEmpty && (hasEmpty = i.isNone)
-        !hasU && (hasU = i.open_id == this.userId)
+        !hasU && (hasU = this.userInfo.open_id && i.open_id == this.userInfo.open_id)
         isEmpty && (isEmpty = i.isNone)
       });
       console.log(isHost, hasEmpty, hasU, isEmpty)
-      this.isShowJoin = !isEmpty && !isHost && hasEmpty && !hasU
+      this.isShowJoin = (this.userInfo.info_complete == 'false' || this.userInfo.info_complete === false ) && !isEmpty && !isHost && hasEmpty && !hasU
       this.isShowCreate = !this.isOwnedGroup && (isEmpty || hasU)
     },
     initSchool(){

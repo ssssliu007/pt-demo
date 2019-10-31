@@ -16,11 +16,18 @@ const router = new Router({
       name: 'index',
       component: index,
       beforeEnter: (to, from, next)=>{
-        let query = to.query
+        let query = to.query;
         query.school && Vue.cookies.set('schoolId', query.school)
         query.host && Vue.cookies.set('hostId', query.host)
-        console.log(query,from)
-        next()
+        let userInfo = Vue.cookies.get('userInfo')
+        if(!query.host && userInfo.open_id){
+          next({path:'/',query:{
+            host: userInfo.open_id,
+            school: query.school
+          }})
+        }else{
+          next()
+        }
       }
     },
     {
@@ -35,12 +42,12 @@ const router = new Router({
       beforeEnter: (to, from, next)=>{
         console.log(to)
         let query = to.query
-        query = {
-          open_id:"o3ybb1Q-x5pLXaCdAOL8tiEbVUZk",
-          username:"Kuukiliselessness",
-          icon: "http%3A%2F%2Fwx.maxiaobei.cn%2Fmedia%2Flogo%2Fuser.png",
-          info_complete: false
-        }
+        // query = {
+        //   open_id:"o3ybb1Q-x5pLXaCdAOL8tiEbVUZk",
+        //   username:"Kuukiliselessness",
+        //   icon: "http%3A%2F%2Fwx.maxiaobei.cn%2Fmedia%2Flogo%2Fuser.png",
+        //   info_complete: false
+        // }
         query.icon = decodeURIComponent(query.icon)
         if(query.open_id){
           Vue.cookies.set('userInfo', query)
