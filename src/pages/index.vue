@@ -227,12 +227,18 @@ export default {
           this.$cookies.set('hostId', 'isNewHere')
         }
         let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?' + [
+          ['state', 'STATE'],
           ['response_type', 'code'],
           ['scope','snsapi_userinfo'],
           ['appid', 'wx18a6e8db7f409537'],
-          ['state', 'STATE#wechat_redirect'],
           ['redirect_uri', encodeURIComponent('http://wx.maxiaobei.cn/dapi/info/test_1/')]
-        ].map(i=>i.join('=')).join('&')
+        ].map(i=>i.join('=')).join('&')+'#wechat_redirect'
+        // let url = `https://open.weixin.qq.com/connect/oauth2/authorize?
+        // appid=wx18a6e8db7f409537&
+        // redirect_uri=http%3A%2F%2Fwx.maxiaobei.cn%2Fdapi%2Finfo%2Ftest_1%2F&
+        // response_type=code&
+        // scope=snsapi_userinfo&
+        // state=STATE#wechat_redirect`
 
         // history.replaceState(null, document.title, url.split('#')[0] + '#');
         // location.replace('');
@@ -295,7 +301,8 @@ export default {
   position: relative;
 }
 .toper{
-  height: 30vh;
+  // height: 30vh;
+  height: 80vw;
   background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%) top center/cover;
   padding: 0 25px;
   position: relative;
