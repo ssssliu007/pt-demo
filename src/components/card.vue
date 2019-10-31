@@ -67,6 +67,9 @@ export default {
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: rgba(0, 0, 0, .1) 0 3px 6px 3px;
+  margin: 0;
+  position: relative;
+  z-index: 2;
 }
 .card-right-box{
   display: flex;

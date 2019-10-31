@@ -3,6 +3,9 @@
     <div v-if="item">
       <div class="toper" :style="{backgroundImage:schools[0] && `url(${schools[0].logo})`}">
         <h4 class="text-white text-center pt-5">{{header}}</h4>
+      </div>
+      <div class="toper-buffer"></div>
+      <div class="p-2">
         <fv-card class="item-top" :img="item.index_logo" :header="item.index_name" :memberInfo="memberInfo"></fv-card>
       </div>
       <b-container class="member-box">
@@ -68,7 +71,7 @@
       </div>
     </div>
     <p class="no-info text-center">
-      Footerstart CopyRight 2019©feiYang footerenD
+      Footerstart 2019©feiYang footerenD
     </p>
   </div>
 </template>
@@ -99,18 +102,14 @@ export default {
     }
   },
   created(){
-    this.userId = this.$route.query.open_id;
+    // this.userId = this.$route.query.open_id;
     // this.hostId = this.$route.query.host;
     // if(this.hostId === 'isuser' || !this.hostId){
     //   this.hostId = this.userId
     // }
-
-
-    this.initUserInfo().then(()=>{
-      return this.initGroup()
-    }).catch(()=>{
-      return this.initGroup()
-    }).then(()=>{
+    // this.userData = this.$route.query
+    this.initUserInfo()
+    this.initGroup().then(()=>{
       return this.initBtns()
     })
     this.initSchool()
@@ -138,12 +137,13 @@ export default {
           this.axios.post('/dapi/info/fill_information/', {
             type: 2,
             open_id: this.userId
+          }).then(()=>{
+            this.$router.replace({
+              path:'/',
+              query: query
+            })
           })
         }
-        this.$router.replace({
-          path:'/',
-          query: query
-        })
       }else{
         this.$router.push({
           path:'/form/',
@@ -183,7 +183,7 @@ export default {
         if (data.member){
           data.member.need = data.member.maxNo - data.member.list.length
           if(data.member.list.length>0){
-              if(data.member.list[0].open_id == this.userId){
+            if(data.member.list[0].open_id == this.userId){
               this.isOwnedGroup = true
             }
             for(let k=data.member.list.length; k<data.member.maxNo; k++){
@@ -203,21 +203,32 @@ export default {
         // this.initGroup(null, true)
       })
     },
-    initUserInfo(id=this.userId){
+    initUserInfo(){
       let host = this.$cookies.get('hostId')
+      let id;
       if (host){
-        window.history
+        // this.hostId = id = this.$route.query.open_id
         if(host =='isNewHere'){
-          this.hostId = id
+          this.$cookies.remove('hostId')
+          if(this.$route.query.open_id){
+            this.$cookies.set('userData', JSON.stringify(this.$route.query) )
+          }
         }else{
+          // this.$cookies.remove('hostId')
           this.hostId = host
         }
-        this.userData = {
-          "icon": this.$route.query.icon,
-          "open_id":this.$route.query.open_id,
-          "username":this.$route.query.username,
-          "info_complete": this.$route.query.info_complete
+        if(this.$route.query.open_id){
+          this.userData = this.$route.query
+        }else{
+          let userData = this.$cookies.get('userData');
+          if(typeof userData == 'string'){
+            userData = decodeURIComponent(userData);
+            userData = JSON.parse(userData);
+          }
+          this.userData = userData.open_id
         }
+        id = this.userData.open_id
+        this.userId = id
         console.log(this.userData)
       } else{
         let op_id = this.$route.query.open_id
@@ -246,9 +257,9 @@ export default {
         // this.$router.push(url)
         // window.history.pushState(url)
       }
-      if(id == this.hostId){
-        this.isOwnedGroup = true
-      }
+      // if(id == this.hostId){
+      //   this.isOwnedGroup = true
+      // }
 
       // let url = '/dapi/info/user_login_info/'
       // return this.axios.get(url).then(({data})=>{
@@ -305,14 +316,15 @@ export default {
   height: 80vw;
   background: linear-gradient(180deg, rgb(254,157,45) 0%, rgb(252, 94, 78) 100%) top center/cover;
   padding: 0 25px;
-  position: relative;
-}
-.item-top{
   position: absolute;
-  bottom: -50px;
-  left: 25px;
-  right: 25px;
+  width: 100%;
+  box-sizing: border-box;
 }
+.toper-buffer{
+  height: 65vw;
+}
+// .item-top{
+// }
 .member-box{
   margin-top: 70px;
   padding-bottom: 50px;
@@ -361,6 +373,7 @@ export default {
   }
 }
 .member-item.is-none{
+  outline: none;
   .member-icon{
     border: dashed 2px #eeeeee;
   }
@@ -387,6 +400,7 @@ export default {
 }
 .info-box{
   padding: 50px 25px 0px 25px;
+  padding: 50px 0px 0px 0px;
   color: #888;
   line-height: 1.5;
   font-size: 12px;

@@ -1,6 +1,6 @@
 <template>
   <div class="form">
-    <b-container>
+    <b-container class="pb-5 mb-5">
       <b-row>
         <b-col class="pt-3">
           <h4>填写资料</h4>
