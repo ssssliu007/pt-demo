@@ -100,10 +100,10 @@ export default {
   },
   created(){
     this.userId = this.$route.query.open_id;
-    this.hostId = this.$route.query.host;
-    if(this.hostId === 'isuser' || !this.hostId){
-      this.hostId = this.userId
-    }
+    // this.hostId = this.$route.query.host;
+    // if(this.hostId === 'isuser' || !this.hostId){
+    //   this.hostId = this.userId
+    // }
 
 
     this.initUserInfo().then(()=>{
@@ -130,16 +130,32 @@ export default {
       }else if(typeName=='create'){
         type = 2
       }
-      this.$router.push({
-        path:'/form/',
-        query:{
-          host: this.hostId || '',
-          type,
-          group
+      if(this.userData.info_complete == 'true'){
+        let query = JSON.parse(JSON.stringify(this.$route.query))
+        if(typeName=='join'){
+          alert('您已经参加过其他团了，请勿重复加入。')
+        }else if(typeName=='create'){
+          this.axios.post('/dapi/info/fill_information/', {
+            type: 2,
+            open_id: this.userId
+          })
         }
-      })
+        this.$router.replace({
+          path:'/',
+          query: query
+        })
+      }else{
+        this.$router.push({
+          path:'/form/',
+          query:{
+            host: this.hostId || '',
+            type,
+            group
+          }
+        })
+      }
     },
-    initGroup(id=this.hostId){
+    initGroup(id=this.hostId || this.userId){
       // this.axios.get('/')
       // return this.axios.get('/json/member-info.json').then(({data})=>{
       // let url = isError?'/json/member-info-none.json':'/dapi/info/group_info/'
@@ -188,15 +204,38 @@ export default {
       })
     },
     initUserInfo(id=this.userId){
-      if (this.open_id){
+      let host = this.$cookies.get('hostId')
+      if (host){
+        window.history
+        if(host =='isNewHere'){
+          this.hostId = id
+        }else{
+          this.hostId = host
+        }
         this.userData = {
           "icon": this.$route.query.icon,
           "open_id":this.$route.query.open_id,
-          "username":this.$route.query.username
+          "username":this.$route.query.username,
+          "info_complete": this.$route.query.info_complete
         }
         console.log(this.userData)
       } else{
-        let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx18a6e8db7f409537&redirect_uri=http%3A%2F%2Fwx.maxiaobei.cn%2Fdapi%2Finfo%2Ftest_1%2F&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect'
+        let op_id = this.$route.query.open_id
+        if(op_id){
+          this.$cookies.set('hostId', op_id)
+        }else{
+          this.$cookies.set('hostId', 'isNewHere')
+        }
+        let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?' + [
+          ['response_type', 'code'],
+          ['scope','snsapi_userinfo'],
+          ['appid', 'wx18a6e8db7f409537'],
+          ['state', 'STATE#wechat_redirect'],
+          ['redirect_uri', encodeURIComponent('http://wx.maxiaobei.cn/dapi/info/test_1/')]
+        ].map(i=>i.join('=')).join('&')
+
+        // history.replaceState(null, document.title, url.split('#')[0] + '#');
+        // location.replace('');
         window.location.href = url
         // this.$router.push(url)
         // window.history.pushState(url)
@@ -228,7 +267,7 @@ export default {
         console.log(i.open_id == this.userId)
         return hasHost && hasEmpty && !hasU
       });
-      this.isShowJoin = hasHost && hasEmpty && !hasU
+      this.isShowJoin = (this.userData.info_complete !='true') && hasHost && hasEmpty && !hasU
       this.isShowCreate = !this.isOwnedGroup && (isEmpty || hasU)
     },
     initSchool(){
