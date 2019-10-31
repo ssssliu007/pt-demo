@@ -106,7 +106,7 @@ export default {
   },
   created(){
     try {
-      this.schools = JSON.parse(localStorage.getItem('school_info'))
+      this.schools = JSON.parse(sessionStorage.getItem('school_info'))
       this.areas = this.schools.map(i=>{
           return{
             text: i.school_name,
@@ -122,7 +122,6 @@ export default {
       evt.preventDefault()
       console.log(JSON.stringify(this.form))
       this.isLoading = true
-
       this.axios.post('/dapi/info/fill_information/', {
         name: this.form.name,
         grade: this.form.level,
@@ -131,16 +130,17 @@ export default {
         study_time: this.form.time,
         type: this.$route.query.type,
         group: this.$route.query.group,
-        open_id: this.$route.query.host
+        open_id: this.$route.query.user
       }).then(({data})=>{
         this.doneInfoQuery = {
-          group: data.group,
+          host: this.$route.query.host,
+          school: this.$route.query.school,
+          login: true
         }
+        setTimeout(() => {
+          this.$bvModal.show('modal-done')
+        }, 1200);
       })
-
-      setTimeout(() => {
-        this.$bvModal.show('modal-done')
-      }, 1200);
     },
     isPhoneOk(e){
       if(e.length>0){

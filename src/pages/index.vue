@@ -2,7 +2,7 @@
   <div class="index">
     <div v-if="item">
       <div class="toper" :style="{backgroundImage:schools[0] && `url(${schools[0].logo})`}">
-        <h4 class="text-white text-center pt-5">{{header}}</h4>
+        <!-- <h4 class="text-white text-center pt-5">{{header}}</h4> -->
       </div>
       <div class="toper-buffer"></div>
       <div class="p-2">
@@ -53,7 +53,7 @@
           <b-col cols="12" class="info-box">
             <!-- <h6>规则说明</h6>
             <p v-html="info"></p> -->
-            <img width="100%" :src="info" alt="">
+            <img width="100%" :src="item.index_img" alt="">
           </b-col>
         </b-row>
       </b-container>
@@ -85,39 +85,26 @@ export default {
   },
   data() {
     return {
-      header: '',
+      // header: '',
       item: false,
       memberInfo: false,
-      info: '',
-      userId: 0,
       hostId: 0,
+      groupId:0,
+      userInfo: false,
+
+      schools:[],
       preText: '加载中 ...',
       isShowJoin: false,
       isShowCreate: false,
-      schools:[],
       isOwnedGroup: false,
-      userData: false,
-      groupId:0,
-      open_id: this.$route.query.open_id,
     }
   },
   created(){
-    // this.userId = this.$route.query.open_id;
-    // this.hostId = this.$route.query.host;
-    // if(this.hostId === 'isuser' || !this.hostId){
-    //   this.hostId = this.userId
-    // }
-    // this.userData = this.$route.query
     this.initUserInfo()
     this.initGroup().then(()=>{
       return this.initBtns()
     })
     this.initSchool()
-    // this.initUserInfo().then(()=>{
-    //   return this.initGroup()
-    // }).then(()=>{
-    //   this.initBtns()
-    // })
   },
   methods:{
     btnClick(typeName){
@@ -129,14 +116,15 @@ export default {
       }else if(typeName=='create'){
         type = 2
       }
-      if(this.userData.info_complete == 'true'){
+      console.log('this.userInfo.info_complete', this.userInfo.info_complete)
+      if(this.userInfo.info_complete == true){
         let query = JSON.parse(JSON.stringify(this.$route.query))
         if(typeName=='join'){
           alert('您已经参加过其他团了，请勿重复加入。')
         }else if(typeName=='create'){
           this.axios.post('/dapi/info/fill_information/', {
             type: 2,
-            open_id: this.userId
+            open_id: this.userInfo.open_id
           }).then(()=>{
             this.$router.replace({
               path:'/',
@@ -148,42 +136,35 @@ export default {
         this.$router.push({
           path:'/form/',
           query:{
-            host: this.hostId || '',
+            host: this.hostId,
+            user: this.userInfo.open_id,
+            school: this.$route.query.school,
             type,
             group
           }
         })
       }
     },
-    initGroup(id=this.hostId || this.userId){
+    initGroup(id=this.hostId){
       // this.axios.get('/')
       // return this.axios.get('/json/member-info.json').then(({data})=>{
       // let url = isError?'/json/member-info-none.json':'/dapi/info/group_info/'
-      let url = '/dapi/info/group_info/'+ id +'/',
-      promise;
-      if(false && id == this.userId){
-        promise = new Promise((a)=>{
-          setTimeout(() => {
-            console.log('ddd')
-            a({data:this.userData})
-          }, 0);
-        })
-      }else{
-        promise = this.axios.get(url)
-      }
-      console.log(promise)
-      return promise.then(({data})=>{
+      let url = '/dapi/info/group_info/'+ id +'/';
+      console.log('this', this)
+      return this.axios.get(url).then(({data})=>{
         if(!data.member){
+          // 没有 团信息
           data.member = {
             maxNo: 5,
             list:[]
           }
         }
-        this.groupId =data.id
+        this.groupId = data.id
         if (data.member){
           data.member.need = data.member.maxNo - data.member.list.length
           if(data.member.list.length>0){
-            if(data.member.list[0].open_id == this.userId){
+          
+            if(data.member.list[0].open_id == this.userInfo.open_id){
               this.isOwnedGroup = true
             }
             for(let k=data.member.list.length; k<data.member.maxNo; k++){
@@ -194,9 +175,8 @@ export default {
               })
             }
           }
-        this.memberInfo = data.member
-        this.item = data.item
-        this.info = data.item.index_img
+          this.memberInfo = data.member
+          this.item = data.item
         }
       }).catch((e)=>{
         console.log(e)
@@ -204,39 +184,35 @@ export default {
       })
     },
     initUserInfo(){
-      let host = this.$cookies.get('hostId')
-      let id;
-      if (host){
-        // this.hostId = id = this.$route.query.open_id
-        if(host =='isNewHere'){
-          this.$cookies.remove('hostId')
-          if(this.$route.query.open_id){
-            this.$cookies.set('userData', JSON.stringify(this.$route.query) )
-          }
-        }else{
-          // this.$cookies.remove('hostId')
-          this.hostId = host
+      let userInfo = this.$cookies.get('userInfo');
+      // debugger
+      if (userInfo){
+        this.hostId = this.$route.query.host;
+        this.userInfo = userInfo
+
+        if(!this.hostId){
+          this.hostId = this.userInfo.open_id
         }
-        if(this.$route.query.open_id){
-          this.userData = this.$route.query
-        }else{
-          let userData = this.$cookies.get('userData');
-          if(typeof userData == 'string'){
-            userData = decodeURIComponent(userData);
-            userData = JSON.parse(userData);
-          }
-          this.userData = userData.open_id
-        }
-        id = this.userData.open_id
-        this.userId = id
-        console.log(this.userData)
-      } else{
-        let op_id = this.$route.query.open_id
-        if(op_id){
-          this.$cookies.set('hostId', op_id)
-        }else{
-          this.$cookies.set('hostId', 'isNewHere')
-        }
+        // if(this.$route.query.open_id){
+        //   this.userData = this.$route.query
+        // }else{
+        //   let userData = this.$cookies.get('userData');
+        //   if(typeof userData == 'string'){
+        //     userData = decodeURIComponent(userData);
+        //     userData = JSON.parse(userData);
+        //   }
+        //   this.userData = userData.open_id
+        // }
+        // id = this.userData.open_id
+        // this.userId = id
+        // console.log(this.userData)
+      } else {
+        // let op_id = this.$route.query.open_id
+        // if(op_id){
+        //   this.$cookies.set('hostId', op_id)
+        // }else{
+        //   this.$cookies.set('hostId', 'isNewHere')
+        // }
         let url = 'https://open.weixin.qq.com/connect/oauth2/authorize?' + [
           ['state', 'STATE'],
           ['response_type', 'code'],
@@ -253,7 +229,7 @@ export default {
 
         // history.replaceState(null, document.title, url.split('#')[0] + '#');
         // location.replace('');
-        window.location.href = url
+        // window.location.href = url
         // this.$router.push(url)
         // window.history.pushState(url)
       }
@@ -272,19 +248,18 @@ export default {
       // })
     },
     initBtns(){
-      let hasHost,
-      hasEmpty,
-      hasU,
+      let isHost = false,
+      hasEmpty = true,
+      hasU = false,
       isEmpty = true;
       this.memberInfo && this.memberInfo.list.find((i)=>{
-        !hasHost && (hasHost = i.isHost)
+        !isHost && (isHost = i.isHost)
         !hasEmpty && (hasEmpty = i.isNone)
         !hasU && (hasU = i.open_id == this.userId)
-        isEmpty && i.isNone
-        console.log(i.open_id == this.userId)
-        return hasHost && hasEmpty && !hasU
+        isEmpty && (isEmpty = i.isNone)
       });
-      this.isShowJoin = (this.userData.info_complete !='true') && hasHost && hasEmpty && !hasU
+      console.log(isHost, hasEmpty, hasU, isEmpty)
+      this.isShowJoin = !isEmpty && !isHost && hasEmpty && !hasU
       this.isShowCreate = !this.isOwnedGroup && (isEmpty || hasU)
     },
     initSchool(){
@@ -298,7 +273,7 @@ export default {
           data = [data]
         }
         this.schools = data
-        localStorage.setItem('school_info',JSON.stringify(data))
+        sessionStorage.setItem('school_info',JSON.stringify(data))
       })
     }
   }
